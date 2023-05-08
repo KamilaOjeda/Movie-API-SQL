@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi import FastAPI, Path, Query, Depends
+from fastapi import Path, Query, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List
@@ -9,6 +9,8 @@ from models.movie import Movie as MovieModel # Para que sea un nombre distinto a
 from fastapi.encoders import jsonable_encoder
 # Importamos 
 from middlewares.jwt_bearer import JWTBearer
+# Importamos el servicio MovieService
+from services.movie import MovieService
 
 # Creamos el router
 movie_router = APIRouter()
@@ -40,13 +42,13 @@ class Movie(BaseModel):
 
 @movie_router.get("/movies", tags=["movies"], 
          response_model=List[Movie], 
-         status_code=200, 
-         dependencies=[Depends(JWTBearer())])
+         status_code=200, dependencies=[Depends(JWTBearer())])
 def get_movies() -> List[Movie]:
     ## Crear una instancia de la session
     db = Session()
-    ## Consultar los datos
-    result = db.query(MovieModel).all()
+    result = MovieService(db).get_movies()
+    # ## Consultar los datos
+    # result = db.query(MovieModel).all()
     return JSONResponse(status_code=200, content = jsonable_encoder(result))
     # return JSONResponse(status_code=200, content = movies)
 
@@ -55,7 +57,7 @@ def get_movies() -> List[Movie]:
 def get_movie(id: int = Path(ge=1, le=2000)) -> Movie: ## Agregamos validaciones de parámetros de ruta con Path
     ## Crear la instancia de la session
     db = Session()
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    result = MovieService(db).get_movie(id)
     if not result:
         return JSONResponse(status_code=404, content={"message": "No encontrado"})
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
@@ -74,7 +76,7 @@ def get_movie(id: int = Path(ge=1, le=2000)) -> Movie: ## Agregamos validaciones
 def get_movies_by_category(category: str = Query(min_length=5, max_length=15)) -> List[Movie]: ## Agregamos validación de parámetros query
     ## Crear instancia de la session
     db = Session()
-    result = db.query(MovieModel).filter(MovieModel.category == category).all()
+    result = MovieService(db).get_movie_by_category(category)
     if not result:
         return JSONResponse(status_code=404, content={"message": "No encontrado"})
     return JSONResponse(status_code=200, content=jsonable_encoder(result))

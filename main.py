@@ -1,18 +1,9 @@
 from fastapi import FastAPI
-# , Body, Path, Query, Request, Depends, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel
-# from typing import Optional, List
-from jwt_manager import create_token
-# from fastapi.security import HTTPBearer
+from fastapi.responses import HTMLResponse
 # Importamos el archivo de la base de datos
 from config.database import engine, Base
-# from models.movie import Movie as MovieModel # Para que sea un nombre distinto al que ya tenemos en este archivo
-# from fastapi.encoders import jsonable_encoder
 # Importamos el middelware
 from middlewares.error_handler import ErrorHandler
-# Importamos 
-# from middlewares.jwt_bearer import JWTBearer
 # Importamos el router
 from routers.movie import movie_router
 from routers.user import user_router
@@ -23,6 +14,7 @@ app.version = "0.0.1"
 
 # Añadir middleware en FastAPI
 app.add_middleware(ErrorHandler)
+
 # Llamamos al router movie
 app.include_router(movie_router)
 # Llamamos al router user
