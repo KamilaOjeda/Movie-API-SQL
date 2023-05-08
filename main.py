@@ -120,8 +120,15 @@ def get_movie(id: int = Path(ge=1, le=2000)) -> Movie: ## Agregamos validaciones
 # Parámetros query, filtrando por categoría
 @app.get("/movies/", tags=["movies"], response_model=List[Movie], status_code=200)
 def get_movies_by_category(category: str = Query(min_length=5, max_length=15)) -> List[Movie]: ## Agregamos validación de parámetros query
-    data = [ item for item in movies if item["category"] == category]
-    return JSONResponse(content=data)
+    ## Crear instancia de la session
+    db = Session()
+    result = db.query(MovieModel).filter(MovieModel.category == category).all()
+    if not result:
+        return JSONResponse(status_code=404, content={"message": "No encontrado"})
+    return JSONResponse(status_code=200, content=jsonable_encoder(result))
+
+    # data = [ item for item in movies if item["category"] == category]
+    # return JSONResponse(content=data)
 
 # Método POST
 @app.post("/movies", tags=["movies"], response_model=dict, status_code=201)
@@ -150,22 +157,44 @@ def create_movie(movie: Movie) -> dict: ## En vez de poner cada elemento del bod
 # Método PUT, como parámetro de ruta
 @app.put("/movies/{id}", tags=["movies"], response_model=dict, status_code=200)
 def update_movie(id: int, movie: Movie) -> dict:
-    for item in movies:
-        if item["id"] == id:
-            item["tittle"] = movie.tittle
-            item["overview"] = movie.overview
-            item["year"] = movie.year
-            item["rating"] = movie.rating
-            item["category"] = movie.category
-            return JSONResponse(status_code=200, content={"message": "Se ha modificado la película"}) # devolvemos un diccionario
+    ## Creando session
+    db = Session()
+    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not result:
+        return JSONResponse(status_code=404, content={"message": "No encontrado"})
+    result.tittle = movie.tittle
+    result.overview = movie.overview
+    result.year = movie.year
+    result.rating = movie.rating
+    result.category = movie.category
+    db.commit()
+    return JSONResponse(status_code=200, content={"message": "Se ha modificado la película"}) # devolvemos un diccionario
+
+    # for item in movies:
+    #     if item["id"] == id:
+    #         item["tittle"] = movie.tittle
+    #         item["overview"] = movie.overview
+    #         item["year"] = movie.year
+    #         item["rating"] = movie.rating
+    #         item["category"] = movie.category
+    #         return JSONResponse(status_code=200, content={"message": "Se ha modificado la película"}) # devolvemos un diccionario
 
 # Método DELETE, como parámetro de ruta
 @app.delete("/movies/{id}", tags=["movies"], response_model=dict, status_code=200)
 def update_movie(id: int) -> dict:
-    for item in movies:
-        if item["id"] == id:
-            movies.remove(item)
-            return JSONResponse(status_code=200, content={"message": "Se ha eliminado la película"}) # devolvemos un diccionario
+    # Crear session
+    db = Session()
+    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not result:
+        return JSONResponse(status_code=404, content={"message": "No encontrado"})
+    db.delete(result)
+    db.commit()
+    return JSONResponse(status_code=200, content={"message": "Se ha eliminado la película"}) # devolvemos un diccionario
+
+    # for item in movies:
+    #     if item["id"] == id:
+    #         movies.remove(item)
+    #         return JSONResponse(status_code=200, content={"message": "Se ha eliminado la película"}) # devolvemos un diccionario
 
         
 # Validaciones de tipos de datos
