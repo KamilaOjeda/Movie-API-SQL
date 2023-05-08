@@ -6,7 +6,7 @@ from jwt_manager import create_token, validate_token
 from fastapi.security import HTTPBearer
 # Importamos el archivo de la base de datos
 from config.database import Session, engine, Base
-from models.movie import Movie
+from models.movie import Movie as MovieModel # Para que sea un nombre distinto al que ya tenemos en este archivo
 
 app = FastAPI()
 app.title = "Mi primera app con FastAPI"
@@ -115,7 +115,12 @@ def get_movies_by_category(category: str = Query(min_length=5, max_length=15)) -
 @app.post("/movies", tags=["movies"], response_model=dict, status_code=201)
 # def create_movie(id: int = Body(), tittle: str = Body(), overview: str = Body(), year: int = Body(), rating: float = Body(), category: str = Body()):
 def create_movie(movie: Movie) -> dict: ## En vez de poner cada elemento del body, utilizamos este atajo
-    movies.append(movie) # Insertar datos
+    ## Crear una sesión para conectarnos a la Base de Datos
+    db = Session()
+    new_movie = MovieModel(**movie.dict()) ## Conviernte movie en un diccionario y con ** pasamos todos los parámetros de movie.
+    db.add(new_movie) ## Añadimos la película que se acaba de crear.
+    db.commit() ## Actualización para que los datos se guarden
+    # movies.append(movie) # Insertar datos
     return JSONResponse(status_code=201, content={"message": "Se ha registrado la película"}) # devolvemos un diccionario
 
 # # Método PUT, como parámetro de ruta
