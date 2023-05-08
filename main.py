@@ -7,6 +7,7 @@ from fastapi.security import HTTPBearer
 # Importamos el archivo de la base de datos
 from config.database import Session, engine, Base
 from models.movie import Movie as MovieModel # Para que sea un nombre distinto al que ya tenemos en este archivo
+from fastapi.encoders import jsonable_encoder
 
 app = FastAPI()
 app.title = "Mi primera app con FastAPI"
@@ -90,15 +91,26 @@ def login(user: User):
          status_code=200, 
          dependencies=[Depends(JWTBearer())])
 def get_movies() -> List[Movie]:
-    return JSONResponse(status_code=200, content = movies)
+    ## Crear una instancia de la session
+    db = Session()
+    ## Consultar los datos
+    result = db.query(MovieModel).all()
+    return JSONResponse(status_code=200, content = jsonable_encoder(result))
+    # return JSONResponse(status_code=200, content = movies)
 
 # Parámetros de ruta
 @app.get("/movies/{id}", tags=["movies"], response_model=Movie)
 def get_movie(id: int = Path(ge=1, le=2000)) -> Movie: ## Agregamos validaciones de parámetros de ruta con Path
-    for item in movies:
-        if item["id"] == id:
-            return JSONResponse(content = item)
-    return JSONResponse(status_code=404, content={"message": "No se ha encontrado la página"})
+    ## Crear la instancia de la session
+    db = Session()
+    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not result:
+        return JSONResponse(status_code=404, content={"message": "No encontrado"})
+    return JSONResponse(status_code=200, content=jsonable_encoder(result))
+    # for item in movies:
+    #     if item["id"] == id:
+    #         return JSONResponse(content = item)
+    # return JSONResponse(status_code=404, content={"message": "No se ha encontrado la página"})
 
 # Parámetros query, cuando no se indica en la ruta, si no como parámetro
 # @app.get("/movies/", tags=["movies"])
