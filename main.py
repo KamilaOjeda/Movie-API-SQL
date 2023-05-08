@@ -4,10 +4,16 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from jwt_manager import create_token, validate_token
 from fastapi.security import HTTPBearer
+# Importamos el archivo de la base de datos
+from config.database import Session, engine, Base
+from models.movie import Movie
 
 app = FastAPI()
 app.title = "Mi primera app con FastAPI"
 app.version = "0.0.1"
+
+# Llamamos a BAse, con referencia del motor del cul se crearan las tablas
+Base.metadata.create_all(bind=engine)
 
 # Creamos una nueva clase que herda la clase HTTPBearear
 ## funcion call: recibe petición y devuelve la credenciales del usuario

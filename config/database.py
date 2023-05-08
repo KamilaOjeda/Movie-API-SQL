@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base # PAra manipular las tablas de la base de datos
 
-sqlite_file_name = "database.sqlite"
+sqlite_file_name = "../database.sqlite"
 
 # Leer el directorio actual del archivo 
 base_dir = os.path.dirname(os.path.realpath(__file__))
