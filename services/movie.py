@@ -1,5 +1,6 @@
 # Servicios para consultar datos
 from models.movie import Movie as MovieModel
+from schemas.movie import Movie
 
 # Clase.Servicio para tener las películas
 class MovieService():
@@ -25,4 +26,29 @@ class MovieService():
         result = self.db.query(MovieModel).filter(MovieModel.category == category).all()
         return result
 
+    # Método, desde la entidad de los base de datos enviar las propiedades
+    def create_movie(self, movie: Movie):
+        new_movie = MovieModel(**movie.dict())
+        self.db.add(new_movie)
+        self.db.commit()
+        return
+    
+    # Método para modificar datos
+    def update_movie(self, id: int, data: Movie):
+        movie = self.db.query(MovieModel).filter(MovieModel.id == id).first()
+        movie.tittle = data.tittle
+        movie.overview = data.overview
+        movie.year = data.year
+        movie.rating = data.rating
+        movie.category = data.category
+        self.db.commit()
+        return
+    
+     # Método, para eliminar
+    def delete_movie(self, id: int):
+        self.db.query(MovieModel).filter(MovieModel.id == id).delete()
+        self.db.commit()
+        return
+
+        
 # Todo esto lo importamos en el router de movies

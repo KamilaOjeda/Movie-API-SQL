@@ -2,43 +2,19 @@ from fastapi import APIRouter
 from fastapi import Path, Query, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import List, Optional
 # Importamos el archivo de la base de datos
 from config.database import Session
 from models.movie import Movie as MovieModel # Para que sea un nombre distinto al que ya tenemos en este archivo
 from fastapi.encoders import jsonable_encoder
-# Importamos 
 from middlewares.jwt_bearer import JWTBearer
-# Importamos el servicio MovieService
 from services.movie import MovieService
+from schemas.movie import Movie
 
 # Creamos el router
 movie_router = APIRouter()
 
-# Creamos la clase/esquema que va a contener tod la info de cada película
-class Movie(BaseModel):
-    # id: int | None = None ## None es para indicar que puede ser opcional, sin embargo hay otra forma: tiping.
-    id: Optional[int] = None
-    ## Se pueden agregar validaciones importando Field
-    tittle: str = Field(min_length=5, max_length=15)
-    overview: str = Field(min_length=15, max_length=50)
-    year: int = Field(le=2022)
-    rating: float = Field(..., ge=1, le=10) ## el menor es 1, ge= greater tahn o equal to, y el max es 10, le=less than or equal to. Los puntos suspensivos indican que el campo es obligatorio y no puede ser nulo
-    category: str
-
-    ## Agregamos una clase de ejemplo de como deberia estar formado el objeto de cada película.
-    class Config:
-        schema_extra = {
-            "example": {
-                "id": 1,
-                "tittle": "Mi película",
-                "overview": "Sinopsis de la película",
-                "year": 2022,
-                "rating": 7.8,
-                "category": "Drama"
-            }
-        }
-     
+# Movimos la class Movie(BaseModel) a schemas   
 
 @movie_router.get("/movies", tags=["movies"], 
          response_model=List[Movie], 
@@ -90,9 +66,10 @@ def get_movies_by_category(category: str = Query(min_length=5, max_length=15)) -
 def create_movie(movie: Movie) -> dict: ## En vez de poner cada elemento del body, utilizamos este atajo
     ## Crear una sesión para conectarnos a la Base de Datos
     db = Session()
-    new_movie = MovieModel(**movie.dict()) ## Conviernte movie en un diccionario y con ** pasamos todos los parámetros de movie.
-    db.add(new_movie) ## Añadimos la película que se acaba de crear.
-    db.commit() ## Actualización para que los datos se guarden
+    MovieService(db).create_movie(movie)
+    # new_movie = MovieModel(**movie.dict()) ## Conviernte movie en un diccionario y con ** pasamos todos los parámetros de movie.
+    # db.add(new_movie) ## Añadimos la película que se acaba de crear.
+    # db.commit() ## Actualización para que los datos se guarden
     # movies.movie_routerend(movie) # Insertar datos
     return JSONResponse(status_code=201, content={"message": "Se ha registrado la película"}) # devolvemos un diccionario
 
@@ -113,15 +90,11 @@ def create_movie(movie: Movie) -> dict: ## En vez de poner cada elemento del bod
 def update_movie(id: int, movie: Movie) -> dict:
     ## Creando session
     db = Session()
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    result = MovieService(db).get_movie(id)
     if not result:
         return JSONResponse(status_code=404, content={"message": "No encontrado"})
-    result.tittle = movie.tittle
-    result.overview = movie.overview
-    result.year = movie.year
-    result.rating = movie.rating
-    result.category = movie.category
-    db.commit()
+    
+    MovieService(db).update_movie(id, movie)
     return JSONResponse(status_code=200, content={"message": "Se ha modificado la película"}) # devolvemos un diccionario
 
     # for item in movies:
@@ -135,14 +108,13 @@ def update_movie(id: int, movie: Movie) -> dict:
 
 # Método DELETE, como parámetro de ruta
 @movie_router.delete("/movies/{id}", tags=["movies"], response_model=dict, status_code=200)
-def update_movie(id: int) -> dict:
+def delete_movie(id: int) -> dict:
     # Crear session
     db = Session()
-    result = db.query(MovieModel).filter(MovieModel.id == id).first()
+    result: MovieModel = db.query(MovieModel).filter(MovieModel.id == id).first()
     if not result:
         return JSONResponse(status_code=404, content={"message": "No encontrado"})
-    db.delete(result)
-    db.commit()
+    MovieService(db).delete_movie(id)
     return JSONResponse(status_code=200, content={"message": "Se ha eliminado la película"}) # devolvemos un diccionario
 
     # for item in movies:
