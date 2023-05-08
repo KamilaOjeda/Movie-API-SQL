@@ -3,27 +3,35 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from jwt_manager import create_token, validate_token
-from fastapi.security import HTTPBearer
+# from fastapi.security import HTTPBearer
 # Importamos el archivo de la base de datos
 from config.database import Session, engine, Base
 from models.movie import Movie as MovieModel # Para que sea un nombre distinto al que ya tenemos en este archivo
 from fastapi.encoders import jsonable_encoder
+# Importamos el middelware
+from middlewares.error_handler import ErrorHandler
+# Importamos 
+from middlewares.jwt_bearer import JWTBearer
 
 app = FastAPI()
 app.title = "Mi primera app con FastAPI"
 app.version = "0.0.1"
+
+# Añadir middleware en FastAPI
+app.add_middleware(ErrorHandler)
 
 # Llamamos a BAse, con referencia del motor del cul se crearan las tablas
 Base.metadata.create_all(bind=engine)
 
 # Creamos una nueva clase que herda la clase HTTPBearear
 ## funcion call: recibe petición y devuelve la credenciales del usuario
-class JWTBearer(HTTPBearer):
-    async def __call__(self, request: Request):
-        auth = await super().__call__(request)
-        data = validate_token(auth.credentials)
-        if data["email"] != "admin@gmail.com":
-            raise HTTPException(status_code=403, detail="Credenciales inválidas")
+# Movemos todo esto a otro archivo: middlewares/jwt_bearer.py
+# class JWTBearer(HTTPBearer):
+#     async def __call__(self, request: Request):
+#         auth = await super().__call__(request)
+#         data = validate_token(auth.credentials)
+#         if data["email"] != "admin@gmail.com":
+#             raise HTTPException(status_code=403, detail="Credenciales inválidas")
 
 # Creamos un nuevo modelo para el usuario
 class User(BaseModel):
